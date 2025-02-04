@@ -29,22 +29,24 @@ async function clean(
   const db = JSON.parse(file.toString());
   const markdownFile = await Deno.readTextFile(mdFile);
   const markdownDb = JSON.parse(markdownFile.toString());
+  const domain = "https://github.com";
+  const domainRaw = "https://raw.githubusercontent.com";
 
   const plugins = Object.values(db.plugins) as Plugin[];
   plugins.forEach((plugin) => {
     console.log(`processing ${plugin.id}`);
     marked.use({
       walkTokens: (token: any) => {
-        const domain = "https://github.com";
-        const pre =
-          `${domain}/${plugin.username}/${plugin.repo}/blob/${plugin.branch}`;
-
-        if (token.type === "link" || token.type === "image") {
-          if (
-            token.href &&
-            !token.href.startsWith("http") &&
-            !token.href.startsWith("#")
-          ) {
+        if (
+          token.href &&
+          !token.href.startsWith("http") &&
+          !token.href.startsWith("#")
+        ) {
+          if (token.type === "link") {
+            const pre = `${domain}/${plugin.username}/${plugin.repo}/blob/${plugin.branch}`;
+            token.href = `${pre}/${token.href.replace("./", ``)}`;
+          } else if (token.type === "image") {
+            const pre = `${domainRaw}/${plugin.username}/${plugin.repo}/${plugin.branch}`;
             token.href = `${pre}/${token.href.replace("./", ``)}`;
           }
         } else if (token.type === "html") {
